@@ -6,6 +6,6 @@ SmartDataExtractor/TEST.xlsx
 SmartDataExtractor/*.db
 SmartDataExtractor/output.xlsx
 SmartDataExtractor/indexes.txt
-SmartDataExtractor/all.txt
+SmartDataExtractor/all.xlsx
 openai_api.txt
 .gitignore
