@@ -1,0 +1,32 @@
+{
+  "type": "function",
+  "function": {
+    "name": "extract_vacuum_features",
+    "description": "Extract vacuum cleaner specifications from Google search results.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "capacity": {
+          "type": ["string", "null"],
+          "description": "Combined string: TOTAL_POWER/SUCTION_POWER/DUST_CAPACITY_IN_LITERS. Missing parts must be empty strings."
+        },
+        "type": {
+          "type": ["string", "null"],
+          "enum": ["Canister", "Bucket", "Stick", "Handheld", "Robot"],
+          "description": "The physical form/type of the vacuum cleaner."
+        },
+        "technology": {
+          "type": ["string", "null"],
+          "enum": ["Bagged", "Bagless"],
+          "description": "Specifies whether the vacuum has a dust bag or is bagless."
+        },
+        "smart": {
+          "type": ["string", "null"],
+          "enum": ["SMART", "NOT-SMART"],
+          "description": "SMART only for Robot vacuums; NOT-SMART for all others unless the word smart (هوشمند) is mentioned."
+        }
+      },
+      "required": ["capacity", "type", "technology", "smart"]
+    }
+  }
+}

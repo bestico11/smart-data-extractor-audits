@@ -1,0 +1,32 @@
+{
+    "type": "function",
+    "function": {
+        "name": "extract_dishwasher_features",
+        "description": "Extracts structured dishwasher features from Persian Google search results.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": ["integer", "null"],
+                    "description": "Dishwasher capacity in place-settings (6, 8, 12, 13, 14, 15)."
+                },
+                "type": {
+                    "type": ["string", "null"],
+                    "enum": ["Free-standing", "Compact"],
+                    "description": "Free-standing for ایستاده/مبله/توکار, Compact for رومیزی or small capacity units."
+                },
+                "technology": {
+                    "type": ["string", "null"],
+                    "enum": ["Inverter", "Non-inverter"],
+                    "description": "Motor technology based on presence of inverter."
+                },
+                "smart": {
+                    "type": ["string", "null"],
+                    "enum": ["SMART", "NOT-SMART"],
+                    "description": "Whether dishwasher supports Wi-Fi / app / IoT."
+                }
+            },
+            "required": ["capacity", "type", "technology", "smart"]
+        }
+    }
+}

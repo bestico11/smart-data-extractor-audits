@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+SmartDataExtractor/__pycache__/
+SmartDataExtractor/sample_import_file.xlsx
+SmartDataExtractor/TEST.xlsx
+SmartDataExtractor/*.db
+SmartDataExtractor/output.xlsx
+SmartDataExtractor/indexes.txt
+SmartDataExtractor/all.txt
+openai_api.txt
+.gitignore.txt

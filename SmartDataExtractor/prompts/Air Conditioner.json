@@ -1,0 +1,37 @@
+{
+"type": "function",
+"function": {
+    "name": "extract_ac_features",
+    "description": "Extract key air conditioner specifications from Google search results.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "capacity": {
+                "type": ["integer", "null"],
+                "description": "Cooling capacity of the AC in BTU. Example: 9000, 12000, 18000, 24000, 30000."
+            },
+            "type": {
+                "type": ["string", "null"],
+                "enum": ["Wall-split", "Floor-standing"],
+                "description": "The physical type of the AC unit."
+            },
+            "technology": {
+                "type": ["string", "null"],
+                "enum": [
+                    "Fixed-speed-rotary",
+                    "Inverter-rotary",
+                    "Inverter-twin-rotary",
+                    "Piston"
+                ],
+                "description": "Compressing/operational technology."
+            },
+            "smart": {
+                "type": ["string", "null"],
+                "enum": ["SMART", "NOT-SMART"],
+                "description": "Whether the AC supports Wi-Fi/mobile-app/smart control features."
+            }
+        },
+        "required": ["capacity", "type", "technology", "smart"]
+    }
+}
+}

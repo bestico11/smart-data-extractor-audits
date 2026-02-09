@@ -1,0 +1,38 @@
+{
+"type": "function",
+"function": {
+    "name": "extract_tv_features",
+    "description": "Extract key TV specifications from Google search results.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "capacity": {
+                "type": ["integer", "null"],
+                "description": "Screen size in inches (e.g., 32, 40, 43, 55, 65)."
+            },
+            "type": {
+                "type": ["string", "null"],
+                "enum": ["HD", "FHD", "QHD-2K", "UHD-4K", "UHD-8K"],
+                "description": "The resolution class of the TV."
+            },
+            "technology": {
+                "type": ["string", "null"],
+                "enum": [
+                    "LED",
+                    "OLED",
+                    "QLED",
+                    "QNED",
+                    "MINI-LED"
+                ],
+                "description": "Panel technology used in the TV."
+            },
+            "smart": {
+                "type": ["string", "null"],
+                "enum": ["SMART", "NOT-SMART"],
+                "description": "Whether the TV supports smart features such as Wi-Fi, OS, Android, online apps, or voice assistants."
+            }
+        },
+        "required": ["capacity", "type", "technology", "smart"]
+    }
+}
+}

@@ -1,0 +1,32 @@
+{
+"type": "function",
+"function": {
+    "name": "extract_washing_machine_features",
+    "description": "Extract key washing machine specifications from Google search results.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "capacity": {
+                "type": ["integer", "null"],
+                "description": "Drum capacity in kilograms (kg). Example: 6, 7, 8, 9, 10."
+            },
+            "type": {
+                "type": ["string", "null"],
+                "enum": ["Universal", "BLDC", "Direct Drive"],
+                "description": "Motor type: Universal (AC belt), BLDC (DC belt; Bosch Eco-Silence = BLDC), Direct Drive (DC no belt)."
+            },
+            "technology": {
+                "type": ["string", "null"],
+                "enum": ["inverter", "not-inverter"],
+                "description": "Whether the washing machine uses inverter motor technology."
+            },
+            "smart": {
+                "type": ["string", "null"],
+                "enum": ["SMART", "NOT-SMART"],
+                "description": "Whether the washing machine supports IOT, Wi-Fi, mobile app, or voice assistants."
+            }
+        },
+        "required": ["capacity", "type", "technology", "smart"]
+    }
+}
+}

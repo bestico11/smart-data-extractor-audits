@@ -1,0 +1,37 @@
+{
+  "type": "function",
+  "function": {
+    "name": "extract_microwave_features",
+    "description": "Extract key microwave specifications from Google search results.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "capacity": {
+          "type": ["integer", "null"],
+          "description": "Internal capacity of the microwave in liters. Example: 20, 25, 30, 34, 36."
+        },
+        "type": {
+          "type": ["string", "null"],
+          "enum": ["Countertop", "Built-in"],
+          "description": "Installation type of the microwave."
+        },
+        "technology": {
+          "type": ["string", "null"],
+          "enum": [
+            "Wave-only",
+            "Grill",
+            "Convection",
+            "Solardom"
+          ],
+          "description": "The heating/operational technology of the microwave."
+        },
+        "smart": {
+          "type": ["string", "null"],
+          "enum": ["SMART", "NOT-SMART"],
+          "description": "Whether the microwave supports Wi-Fi, mobile app, voice assistant, IoT or smart features."
+        }
+      },
+      "required": ["capacity", "type", "technology", "smart"]
+    }
+  }
+}

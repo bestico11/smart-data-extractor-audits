@@ -1,0 +1,50 @@
+{
+  "type": "function",
+  "function": {
+    "name": "extract_refrigerator_features",
+    "description": "Extract key refrigerator/freezer specifications from Google search results.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "capacity": {
+          "type": ["integer", "null"],
+          "description": "Total capacity in liters based on the item requested in Google search. Convert from cubic feet if needed (cubic feet*19, rounded). Apply twin/single-unit rules. folad numbers or number > 1000 are not approved"
+        },
+        "type": {
+          "type": ["string", "null"],
+          "enum": [
+            "SD-Ref",
+            "SD-Frz",
+            "SBS",
+            "TMF",
+            "BMF",
+            "TMF/BMF",
+            "TWIN",
+            "SD-Mini Bar",
+            "Chest-Frz",
+            "French"
+          ],
+          "description": "Physical configuration type of the refrigerator/freezer."
+        },
+        "technology": {
+          "type": ["string", "null"],
+          "enum": [
+            "Inverter-NoFrost",
+            "NonInverter-NoFrost",
+            "NonInverter-Defrost",
+            "NonInverter",
+            "NoFrost",
+            "High-Efficiency-NoFrost"
+          ],
+          "description": "Cooling and motor technology. May be full combination or partial according to the above values and said rules."
+        },
+        "smart": {
+          "type": ["string", "null"],
+          "enum": ["SMART", "NOT-SMART"],
+          "description": "Whether the unit supports Wi-Fi/app/AI/smart features."
+        }
+      },
+      "required": ["capacity", "type", "technology", "smart"]
+    }
+  }
+}

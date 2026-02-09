@@ -1,0 +1,32 @@
+{
+    "type": "function",
+    "function": {
+        "name": "extract_gas_stove_features",
+        "description": "Extracts structured gas-range features from Persian Google search results.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": ["integer", "null"],
+                    "description": "Number of burners on the stove (e.g., 3, 4, 5)."
+                },
+                "type": {
+                    "type": ["string", "null"],
+                    "enum": ["Oven-stove", "Oven-cabinet"],
+                    "description": "Oven-stove (has oven), Oven-cabinet (no oven, طرح فر)."
+                },
+                "technology": {
+                    "type": ["string", "null"],
+                    "enum": ["Gas-Only", "Gas-Electric"],
+                    "description": "Gas-Only = gas burners + gas oven; Gas-Electric = gas burners + electric oven."
+                },
+                "smart": {
+                    "type": ["string", "null"],
+                    "enum": ["SMART", "NOT-SMART"],
+                    "description": "SMART if device supports Wi-Fi/app/IoT; otherwise NOT-SMART."
+                }
+            },
+            "required": ["capacity", "type", "technology", "smart"]
+        }
+    }
+}

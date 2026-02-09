@@ -1,0 +1,40 @@
+{
+  "type": "function",
+  "function": {
+    "name": "extract_product_info",
+    "description": "Extracts structured product information (category, brand, model) from noisy Google Search result text.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "description": "English product category",
+          "enum":[
+            "Air Conditioner",
+            "Dish Washer",
+            "Gas Oven",
+            "Microwave",
+            "Refrigerator",
+            "Television",
+            "Vacuum Cleaner",
+            "Washing Machine",
+            ""
+          ]
+        },
+        "brand": {
+          "type": "string",
+          "description": "Clean English brand name (e.g., SNOWA, SAMSUNG, LG)"
+        },
+        "model": {
+          "type": "string",
+          "description": "Exact product model extracted from search results (e.g., S1DI-M210-S)"
+        }
+      },
+      "required": [
+        "category",
+        "brand",
+        "model"
+      ]
+    }
+  }
+}

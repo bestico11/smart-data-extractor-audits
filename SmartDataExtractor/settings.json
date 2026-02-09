@@ -1,0 +1,19 @@
+{
+  "database_name": "retails.db",
+  "excel_file": "TEST.xlsx",
+  "sheet_name": "TEST",
+  "output_file": "TEST.xlsx",
+  "output_sheet": "TEST",
+  "main_menu_x": 1158,
+  "main_menu_y": 16,
+  "manual_menu_x": 454,
+  "manual_menu_y": 20,
+  "model_menu_x": 365,
+  "model_menu_y": 406,
+  "feature_menu_x": 790,
+  "feature_menu_y": 92,
+  "merge_menu_x": 750,
+  "merge_menu_y": 230,
+  "unified_menu_x": 558,
+  "unified_menu_y": 43
+}
