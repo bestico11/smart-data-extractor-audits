@@ -8,4 +8,4 @@ SmartDataExtractor/output.xlsx
 SmartDataExtractor/indexes.txt
 SmartDataExtractor/all.txt
 openai_api.txt
-.gitignore.txt
+.gitignore
