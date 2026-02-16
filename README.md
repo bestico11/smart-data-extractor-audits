@@ -68,7 +68,7 @@ The system combines local processing, online data extraction, and AI-assisted co
                     ▼
         ┌────────────────────────────┐
         │   Application Controller   │
-        │    (import_audits.py)      │
+        │         (main.py)          │
         └───────────┬────────────────┘
                     │
                     ▼
@@ -185,7 +185,7 @@ No environment variables are required.
 ## Running the Application
 After activating the virtual environment, run:
 ```python
-python SmartDataExtractor/import_audits.py
+python main.py
 ```
 ##### [<u>Table of Contents</u>](#table-of-contents)
 ## Input & Output
@@ -231,12 +231,12 @@ root_directory/
 │   ├── requirements.txt         # Python dependencies
 │   ├── mapping-tables.xlsx      # Mapping reference data
 │   ├── features definition.xlsx # Feature definitions
-│   ├── import_audits.py         # Application entry point <---
 │   ├── database.py              # Database logic
 │   └── prompts/                 # LLM prompt templates
 ├── venv/                        # Virtual environment
 ├── README.md                    # Project documentation
-└── openai_api.txt               # OpenAI API key (local)
+├── openai_api.txt               # OpenAI API key (local)
+└── main.py                      # Application entry point <---
 ```
 ##### [<u>Table of Contents</u>](#table-of-contents)
 ## Technologies Used

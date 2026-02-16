@@ -24,6 +24,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from SmartDataExtractor import database as db_module
 from openpyxl import load_workbook
 import threading 
+from pathlib import Path
+from shutil import copyfile
 
 class import_audits_table:
     def __init__(self, db_name: str):
@@ -396,23 +398,42 @@ class import_audits_table:
         if not (file_name.endswith('.xlsx') or file_name.endswith('.xls')):
             raise ValueError("Please provide an Excel file with .xlsx or .xls")
         self.file_path = "SmartDataExtractor/"+file_name
-        df = pd.read_excel(self.file_path, sheet_name=sheet_name).drop_duplicates(subset='کالا')
+        df = pd.read_excel(self.file_path, sheet_name=sheet_name)
+        mask = df['کالا'].notna() & df['کالا'].apply(lambda x: isinstance(x, str) and x.strip() != '')
+        df = pd.concat([
+            df[mask].drop_duplicates(subset='کالا'),
+            df[~mask]
+            ]).sort_index()
         count = 0
         length = len(df)
+        df_mismatched = pd.read_excel(self.mapping_path, sheet_name="mismatched")
         for index, row in df.iterrows():
             count += 1
             last_Audits_id = -1
             print(f"processing for row: {count}/{length}...")
-            full_text = str(row['کالا'])
-            if not str(full_text).strip():
-                continue
-            fulltext = full_text.strip().upper()
-            df_mismatched = pd.read_excel(self.mapping_path, sheet_name="mismatched")
-            for index_m, row_m in df_mismatched.iterrows():
-                fulltext = fulltext.replace(row_m['wrong'], row_m['correct'])
+            conn = sqlite3.connect(self.db_name, timeout=30)
+            cursor = conn.cursor()
+            full_text = fulltext = None
+            try:
+                full_text = str(row['کالا'])
+            except Exception:
+                full_text = None
+            if full_text and str(full_text).strip() and full_text != 'nan':
+                fulltext = full_text.strip().upper()
             codemodel = str(row['کد مدل']).strip().upper() if pd.notna(row['کد مدل']) and str(row['کد مدل']).strip() else None
             product = str(row['محصول']).strip() if pd.notna(row['محصول']) and row['محصول'] else None
             brand = str(row['برند']).strip().upper() if pd.notna(row['برند']) and row['برند'] else None
+            if codemodel and product and brand and not fulltext:
+                m_trun = self.get_truncated_model(codemodel)
+                cursor.execute("SELECT a.full_text FROM Audits a JOIN Models m ON m.id=a.model_id WHERE m.category=? AND m.brand=? AND m.truncated_model=?",(product, brand, m_trun))
+                result = cursor.fetchone()
+                if result:
+                    full_text = result[0]
+                    fulltext = full_text.strip().upper()
+            if not fulltext:
+                continue
+            for index_m, row_m in df_mismatched.iterrows():
+                fulltext = fulltext.replace(row_m['wrong'], row_m['correct'])
             capacity = str(row['ظرفیت']) if pd.notna(row['ظرفیت']) and row['ظرفیت'] else None
             type = str(row['نوع']).strip() if pd.notna(row['نوع']) and row['نوع'] else None
             technology = str(row['تکنولوژی']).strip() if pd.notna(row['تکنولوژی']) and row['تکنولوژی'] else None
@@ -428,8 +449,7 @@ class import_audits_table:
                 uncertain_brand, truncated_text = self.last_brand_extraction(truncated_text)
             if uncertain_brand or uncertain_product:
                 truncated_text = truncated_text.replace('مدل ', '').replace(' مدل', '').replace('مدل', '').strip()
-            conn = sqlite3.connect(self.db_name, timeout=30)
-            cursor = conn.cursor()
+            
             state = 0
             if brand and product and codemodel:
                 state = 2
@@ -1373,6 +1393,7 @@ class import_audits_table:
         else:
             return self.get_persian_category(category) if category else ""
 
+
     def check_for_delete_wrong_features(self):
         try:
             conn = sqlite3.connect(self.db_name, timeout=30)
@@ -1381,7 +1402,7 @@ class import_audits_table:
             conn.commit()
             count = cursor.rowcount
             if count:
-                print(f"{count} wrong features is deleted.")
+                print(f"{count} wrong format/value features are deleted.")
         except Exception as e:
             print("error has occured in method category_brand_unifying: ", e)
         finally:
@@ -1401,8 +1422,8 @@ class import_audits_table:
         cursor.execute(wrong_capacity)
         conn.commit()
         deleted_rows = cursor.rowcount
-        conn.close()
-        print(f"{deleted_rows} rows of refrigerators had wrong capacity and were deleted!")
+        if deleted_rows:
+            print(f"{deleted_rows} rows of refrigerators had wrong capacity > 1000 and were deleted!")
         wrong_capacity = """DELETE FROM Features
             WHERE name = 'capacity'
             AND (value='/' OR value='//' OR value='///' OR value='////')
@@ -1412,13 +1433,152 @@ class import_audits_table:
                     WHERE category = 'Vacuum Cleaner'
             );
             """
-        conn = sqlite3.connect(self.db_name, timeout=30)
-        cursor = conn.cursor()
         cursor.execute(wrong_capacity)
         conn.commit()
         deleted_rows = cursor.rowcount
+        if deleted_rows:
+            print(f"{deleted_rows} rows of Vacuum Cleaner had wrong format capacity and were deleted!")
+        wrong_capacity = """DELETE FROM Features
+            WHERE name = 'capacity'
+            AND CAST(value AS INTEGER) < 200
+            AND model_id IN (
+                    SELECT m.id
+                    FROM Models m
+                    JOIN Features f ON f.model_id = m.id
+                    WHERE m.category = 'Refrigerator' AND (f.value = 'TMF' OR f.value = 'BMF' OR f.value = 'TMF/BMF')
+            );
+            """
+        cursor.execute(wrong_capacity)
+        conn.commit()
+        deleted_rows = cursor.rowcount
+        if deleted_rows:
+            print(f"{deleted_rows} rows of TMF/BMF refrigerators had wrong capacity < 200 and were deleted!")
+        wrong_capacity = """DELETE FROM Features
+            WHERE name = 'capacity'
+            AND CAST(value AS INTEGER) < 150
+            AND model_id IN (
+                    SELECT m.id
+                    FROM Models m
+                    JOIN Features f ON f.model_id = m.id
+                    WHERE m.category = 'Refrigerator' AND (f.value = 'SD-Ref')
+            );
+            """
+        cursor.execute(wrong_capacity)
+        conn.commit()
+        deleted_rows = cursor.rowcount
+        if deleted_rows:
+            print(f"{deleted_rows} rows of SD-Ref refrigerators had wrong capacity < 150 and were deleted!")
+        wrong_capacity = """DELETE FROM Features
+            WHERE name = 'capacity'
+            AND CAST(value AS INTEGER) < 90
+            AND model_id IN (
+                    SELECT m.id
+                    FROM Models m
+                    JOIN Features f ON f.model_id = m.id
+                    WHERE m.category = 'Refrigerator' AND (f.value = 'SD-Frz')
+            );
+            """
+        cursor.execute(wrong_capacity)
+        conn.commit()
+        deleted_rows = cursor.rowcount
+        if deleted_rows:
+            print(f"{deleted_rows} rows of SD-Frz refrigerators had wrong capacity < 100 and were deleted!")
+        wrong_capacity = """DELETE FROM Features
+            WHERE name = 'capacity'
+            AND (CAST(value AS INTEGER) < 390 OR CAST(value AS INTEGER) > 950)
+            AND model_id IN (
+                    SELECT m.id
+                    FROM Models m
+                    JOIN Features f ON f.model_id = m.id
+                    WHERE m.category = 'Refrigerator' AND (f.value = 'SBS')
+            );
+            """
+        cursor.execute(wrong_capacity)
+        conn.commit()
+        deleted_rows = cursor.rowcount
+        if deleted_rows:
+            print(f"{deleted_rows} rows of SBS refrigerators had wrong capacity < 390 or > 950 and were deleted!")
+        # close connection
         conn.close()
-        print(f"{deleted_rows} rows of Vacuum Cleaner had wrong capacity and were deleted!")
+
+    def correct_wrong_features(self):
+        conn = sqlite3.connect(self.db_name, timeout=30)
+        cursor = conn.cursor()
+        wrong_capacity = """UPDATE Features SET value = CAST(CAST(value AS INTEGER)/2 AS TEXT)
+            WHERE name = 'capacity'
+            AND CAST(value AS INTEGER) > 620
+            AND model_id IN (
+                    SELECT m.id
+                    FROM Models m
+                    JOIN Features f ON f.model_id = m.id
+                    WHERE m.category = 'Refrigerator' AND (f.value = 'TMF' OR f.value = 'BMF' OR f.value = 'TMF/BMF')
+            );
+            """
+        cursor.execute(wrong_capacity)
+        conn.commit()
+        updated_rows = cursor.rowcount
+        if updated_rows:
+            print(f"{updated_rows} rows of TMF/BMF refrigerators had wrong capacity > 620 and were updated!")
+        wrong_capacity = """UPDATE Features SET value = CAST(CAST(value AS INTEGER)/2 AS TEXT)
+            WHERE name = 'capacity'
+            AND CAST(value AS INTEGER) > 550
+            AND model_id IN (
+                    SELECT m.id
+                    FROM Models m
+                    JOIN Features f ON f.model_id = m.id
+                    WHERE m.category = 'Refrigerator' AND (f.value = 'SD-Ref')
+            );
+            """
+        cursor.execute(wrong_capacity)
+        conn.commit()
+        updated_rows = cursor.rowcount
+        if updated_rows:
+            print(f"{updated_rows} rows of SD-Ref refrigerators had wrong capacity > 550 and were updated!")
+        wrong_capacity = """UPDATE Features SET value = CAST(CAST(value AS INTEGER)/2 AS TEXT)
+            WHERE name = 'capacity'
+            AND CAST(value AS INTEGER) > 500
+            AND model_id IN (
+                    SELECT m.id
+                    FROM Models m
+                    JOIN Features f ON f.model_id = m.id
+                    WHERE m.category = 'Refrigerator' AND (f.value = 'SD-Frz')
+            );
+            """
+        cursor.execute(wrong_capacity)
+        conn.commit()
+        updated_rows = cursor.rowcount
+        if updated_rows:
+            print(f"{updated_rows} rows of SD-Frz refrigerators had wrong capacity > 500 and were updated!")
+        wrong_capacity = """UPDATE Features SET value = 'NonInverter-Defrost'
+            WHERE name = 'technology'
+            AND model_id IN (
+                    SELECT m.id
+                    FROM Models m
+                    JOIN Features f ON f.model_id = m.id
+                    WHERE m.category = 'Refrigerator' AND (f.value = 'Defrost')
+            );
+            """
+        cursor.execute(wrong_capacity)
+        conn.commit()
+        updated_rows = cursor.rowcount
+        if updated_rows:
+            print(f"{updated_rows} rows of refrigerators' technology: Defrost were updated!")
+        wrong_capacity = """UPDATE Features SET value = 'Inverter-NoFrost'
+            WHERE name = 'technology'
+            AND model_id IN (
+                    SELECT m.id
+                    FROM Models m
+                    JOIN Features f ON f.model_id = m.id
+                    WHERE m.category = 'Refrigerator' AND (f.value = 'Inverter')
+            );
+            """
+        cursor.execute(wrong_capacity)
+        conn.commit()
+        updated_rows = cursor.rowcount
+        if updated_rows:
+            print(f"{updated_rows} rows of refrigerators' technology: Inverter were updated!")
+        # close connection
+        conn.close()
 
     def state_two_to_three(self, state = 2, feature=""):
         conn = sqlite3.connect(self.db_name, timeout=30)
@@ -1501,6 +1661,17 @@ class import_audits_table:
         pass # code here
         return dataset
 
+    def is_there_any_feature_for_model_id(self, model_id):
+        con = sqlite3.connect(self.db_name, timeout=30)
+        cur = con.cursor()
+        cur.execute("SELECT * FROM Features WHERE model_id = ?",(model_id,))
+        rows = cur.fetchall()
+        con.close()
+        if len(rows)==0:
+            return False
+        else:
+            return True
+
     @staticmethod
     def get_feature_value(cursor, model_id, audit_id, feature_name):
         cursor.execute(
@@ -1512,6 +1683,7 @@ class import_audits_table:
     
     def export_data_for(self, EXCEL_NAME, SHEET_NAME):
         self.category_brand_unifying()
+        self.correct_wrong_features()
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         output_rows = []
@@ -1557,7 +1729,8 @@ class import_audits_table:
                 if unified_model:
                     tr_unified = self.get_truncated_model(unified_model)
                     id_unified = self.find_similar_model_id(category, brand, tr_unified)
-                    if id_unified != -1:
+
+                    if id_unified != -1 and self.is_there_any_feature_for_model_id(id_unified):
                         model_id = id_unified
             capacity_value = self.get_feature_value(cursor, model_id, audit_id, "capacity")
             type_value = self.get_feature_value(cursor, model_id, audit_id, "type")
@@ -1755,6 +1928,7 @@ class import_audits_table:
         print("end.")
 
     def manual_search_feature(self):
+        self.check_for_delete_wrong_features()
         conn = sqlite3.connect(self.db_name, timeout=30)
         conn.row_factory = sqlite3.Row  # Enable row factory for better access
         cursor = conn.cursor()
@@ -2090,7 +2264,7 @@ class import_audits_table:
             options.add_argument("--disable-blink-features=AutomationControlled")
             options.add_argument("--disable-extensions")
             self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-            self.driver.set_page_load_timeout(8)
+            self.driver.set_page_load_timeout(9)
             time.sleep(1)
             fault = 0
             count = 0
@@ -2474,11 +2648,13 @@ class import_audits_table:
                 HAVING SUM(CASE WHEN f.name IS NOT NULL THEN 1 ELSE 0 END) < 4;""")
             suggested_rows = cursor.fetchall()
             conn.close()
+        
         while True:
             if not empty and (suggested_index >= len(suggested_rows)):
                 break
             suggested_text = suggested_category = suggested_brand = suggested_model = suggested_type = suggested_capacity = suggested_technology = suggested_smart = ""
             if not empty:
+                print(f"row {suggested_index+1}/{len(suggested_rows)}:")
                 suggested_text, b, ub, c , uc, m, um, ut, m_id, a_id = suggested_rows[suggested_index]
                 conn = sqlite3.connect(self.db_name, timeout=30)
                 cursor = conn.cursor()
@@ -2826,7 +3002,15 @@ class import_audits_table:
             # start unification process for existing data
             self.unification_process_for_existing_data(category, brand, models_, reset_unified)
 
-
+    def setup_similar_models_from_file(self):
+        df = pd.read_excel(self.mapping_path, sheet_name='models_unification')
+        for index, row in df.iterrows():
+            category = row['category']
+            brand = row['brand']
+            models = row['models']
+            unified_model = row['unified_model']
+            self.unification_process_for_existing_data(category, brand, models, unified_model)
+        print("running automatic unified models completed.")
 
     @staticmethod
     def load_settings():
@@ -2916,6 +3100,8 @@ class import_audits_table:
             settings["output_sheet"] = entry_output_sheet.get()
             settings["main_menu_x"] = window.winfo_x()
             settings["main_menu_y"] = window.winfo_y()
+            settings["main_menu_width"] = window.winfo_width()
+            settings["main_menu_height"] = window.winfo_height()
             os.makedirs("SmartDataExtractor", exist_ok=True)
             try:
                 with open(settings_file, 'w', encoding='utf-8') as f:
@@ -2964,7 +3150,7 @@ class import_audits_table:
                 if not import_table[0]:
                     status_label.config(text="⚠ Please initiate database first", foreground="#ff6b6b")
                     return
-                import_table[0].manual_data_filling()
+                import_table[0].manual_data_filling(empty = False)
                 window.update()
                 update_title_status()
                 status_label.config(text="✓ Manual insert completed", foreground="#51cf66")
@@ -2978,7 +3164,7 @@ class import_audits_table:
                 if not import_table[0]:
                     status_label.config(text="⚠ Please initiate database first", foreground="#ff6b6b")
                     return
-                import_table[0].manual_data_filling(True)
+                import_table[0].manual_data_filling(empty = True)
                 window.update()
                 update_title_status()
                 status_label.config(text="✓ Manual insert completed", foreground="#51cf66")
@@ -3115,15 +3301,23 @@ class import_audits_table:
         
         def save_and_exit():
             save_settings()
+            BASE_DIR = Path(__file__).resolve().parent
+            src = BASE_DIR / "SmartDataExtractor" / entry_db_name.get().strip()
+            dst = BASE_DIR / f"{src.stem}_backup{src.suffix}"
+            if src.is_file():
+                copyfile(src, dst)
+                print(f"Database backup copied to {dst}")
             status_label.config(text="✓ Settings saved", foreground="#51cf66")
-            window.after(700, window.destroy)
+            window.after(1200, window.destroy)
         
         # Create main window
         window = tk.Tk()
         window.title("Smart Data Extractor (Audits)")
         x = settings.get("main_menu_x", 100)
         y = settings.get("main_menu_y", 100)
-        window.geometry(f"700x950+{x}+{y}")
+        width = settings.get("main_menu_width", 700)
+        height = settings.get("main_menu_height", 950)
+        window.geometry(f"{width}x{height}+{x}+{y}")
         window.configure(bg="#b4cdfa")
         window.resizable(True, True)
         

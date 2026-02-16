@@ -7,5 +7,7 @@ SmartDataExtractor/*.db
 SmartDataExtractor/output.xlsx
 SmartDataExtractor/indexes.txt
 SmartDataExtractor/all.xlsx
+test.ipynb
+retails_backup.db
 openai_api.txt
 .gitignore
