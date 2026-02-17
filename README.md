@@ -216,12 +216,14 @@ python main.py
 ## Graphical User Interface
 The application provides a Windows desktop GUI built with Tkinter.
 ### Main Sections
-- Database initialization
-- Excel import panel
-- Data operation controls
-- Manual correction tools
-- Export panel
-- Console output for logs and messages
+- Database Initialization
+- Excel Import Panel
+- Data Operation Controls
+- Manual Correction Tools
+- Excel Export Panel
+- Console Output for logs and messages  
+  
+![image not found](SmartDataExtractor/prompts/gui.jpg)
 ##### [<u>Table of Contents</u>](#table-of-contents)
 ## Project Structure
 ```text
