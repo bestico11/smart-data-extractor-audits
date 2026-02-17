@@ -217,6 +217,7 @@ python main.py
 The application provides a Windows desktop GUI built with Tkinter.
 ### Main Sections
 - Database Initialization
+- Data Completeness Status
 - Excel Import Panel
 - Data Operation Controls
 - Manual Correction Tools
@@ -231,7 +232,7 @@ root_directory/
 ├── SmartDataExtractor/          # Main application package
 │   ├── settings.json            # App configuration
 │   ├── requirements.txt         # Python dependencies
-│   ├── mapping-tables.xlsx      # Mapping reference data
+│   ├── mapping-tables.xlsx      # Mapping data rules
 │   ├── features definition.xlsx # Feature definitions
 │   ├── database.py              # Database logic
 │   └── prompts/                 # LLM prompt templates
